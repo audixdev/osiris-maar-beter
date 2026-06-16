@@ -4,11 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Osiris Maar Beter</title>
+  <title>Osiris Student Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <link rel="icon" type="image/png" href="icons/icon-512.png">
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
     rel="stylesheet">
@@ -1307,6 +1305,68 @@
       }
     }
 
+    /* Afwezigheid filter bar — card-achtige uitstraling */
+    #afw-filters {
+      background: var(--bg-card-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    #afw-filters label {
+      font-family: var(--font-heading);
+      font-size: 0.75rem;
+      font-weight: 600 !important;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    #afw-filters input[type="date"],
+    #afw-filters select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      transition: var(--transition);
+      outline: none;
+      min-width: 145px;
+      height: 38px;
+    }
+
+    #afw-filters input[type="date"]:focus,
+    #afw-filters select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    #afw-filters select {
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238e9dbd' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 32px;
+    }
+
+    #afw-filters select:hover {
+      border-color: var(--border-hover);
+    }
+
+    #afw-filters select option {
+      background: var(--bg-card);
+      color: var(--text);
+    }
+
     /* Bottom drawer sheet modal for mobile screens */
     @media (max-width: 576px) {
       .modal-overlay {
@@ -1389,7 +1449,7 @@
       <div class="page-header">
         <div class="page-title" id="home-greeting">Goedemorgen</div>
         <div class="page-sub" id="home-datum">Vandaag</div>
-        <small class="page-sub">v1.1 - Juni 2026 - Gemaakt door quinten</small>
+        <small class="page-sub">v1.2 - Juni 2026 - Gemaakt door quinten</small>
       </div>
 
       <div class="card col-full">
@@ -1481,22 +1541,22 @@
                 <button class="toggle-btn" id="tab-overzicht" onclick="showAfwTab('overzicht')">Overzicht</button>
               </div>
 
-              <div id="afw-filters" style="display:none; margin-bottom:12px; gap:8px; align-items:center">
+              <div id="afw-filters" style="display:none">
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-                  <!-- <label style="font-weight:700">Filter periode vanaf</label>
+                  <label style="font-weight:700">Filter periode vanaf</label>
                   <input type="date" id="filter-vanaf" />
                   <label style="font-weight:700">t/m</label>
                   <input type="date" id="filter-tm" />
-                  <label style="font-weight:700">Waarneming</label> -->
+                  <label style="font-weight:700">Waarneming</label>
                   <select id="filter-waarneming">
-                    <!-- <option value="">Alle</option>
+                    <option value="">Alle</option>
                     <option value="aanwezig">Aanwezig</option>
                     <option value="afwezig">Afwezig</option>
                     <option value="eerdere">Eerder vertrokken</option>
-                    <option value="laat">Later aangekomen</option> -->
+                    <option value="laat">Later aangekomen</option>
                   </select>
-                              <!-- <button class="toggle-btn" id="filter-clear" onclick="clearAfwFilters()">Wis filters</button>
-                              <button class="toggle-btn active" id="filter-apply" onclick="applyAfwFilters()">Ok</button> -->
+                              <button class="toggle-btn" id="filter-clear" onclick="clearAfwFilters()">Wis filters</button>
+                              <button class="toggle-btn active" id="filter-apply" onclick="applyAfwFilters()">Ok</button>
                               <button class="toggle-btn" id="filter-more" onclick="loadMoreAfwPerDag()">Meer laden</button>
                 </div>
               </div>
@@ -2260,7 +2320,9 @@
         else window._afwPerDagCache = window._afwPerDagCache.concat(data.items);
         // remember offset
         window._afwPerDagOffset = offset + data.items.length;
-        renderAfwPerDag(window._afwPerDagCache, {});
+        // apply client-side date filters on the fresh data
+        const dateFilters = opts.dateFilters || {};
+        renderAfwPerDag(window._afwPerDagCache, dateFilters);
       } catch (e) {
         el.innerHTML = '<div class="empty-state">Kon per-dag gegevens niet laden</div>';
       }
@@ -2269,7 +2331,9 @@
     async function loadMoreAfwPerDag(){
       const offset = window._afwPerDagOffset || 0;
       const waarneming = document.getElementById('filter-waarneming').value;
-      await loadAfwPerDag({offset, limit:7, waarneming: waarneming || undefined});
+      const vanaf = document.getElementById('filter-vanaf').value;
+      const tm = document.getElementById('filter-tm').value;
+      await loadAfwPerDag({offset, limit:7, waarneming: waarneming || undefined, dateFilters: { vanaf, tm }});
     }
 
     function renderAfwPerDag(items, filters) {
@@ -2334,27 +2398,25 @@
       const vanaf = document.getElementById('filter-vanaf').value;
       const tm = document.getElementById('filter-tm').value;
       const waarneming = document.getElementById('filter-waarneming').value;
-      // when user applies a waarneming filter, request server-side filtered pages
+      // reset pagination
+      window._afwPerDagOffset = 0;
+      const dateFilters = { vanaf, tm };
       if (waarneming) {
-        // reset offset and load from server
-        window._afwPerDagOffset = 0;
-        loadAfwPerDag({offset:0, limit:7, waarneming});
+        // server-side waarneming filter + client-side date filters
+        loadAfwPerDag({offset:0, limit:7, waarneming, dateFilters});
       } else {
-        // no waarneming filter: load first page
-        window._afwPerDagOffset = 0;
-        loadAfwPerDag({offset:0, limit:7});
+        // no waarneming filter: load unfiltered from server, apply date filters client-side
+        loadAfwPerDag({offset:0, limit:7, dateFilters});
       }
-      // apply client-side date filters on cached data
-      setTimeout(()=>{
-        renderAfwPerDag(window._afwPerDagCache || [], {vanaf, tm, waarneming: ''});
-      }, 300);
     }
 
     function clearAfwFilters(){
       document.getElementById('filter-vanaf').value = '';
       document.getElementById('filter-tm').value = '';
       document.getElementById('filter-waarneming').value = '';
-      renderAfwPerDag(window._afwPerDagCache || [], {});
+      // reload from server without filters
+      window._afwPerDagOffset = 0;
+      loadAfwPerDag({offset:0, limit:7});
     }
 
     async function loadAfwOverzicht() {

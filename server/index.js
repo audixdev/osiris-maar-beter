@@ -55,7 +55,15 @@ app.get('/api/mededelingen/:id', (req, res) => {
 
 // Afwezigheid endpoints
 app.get('/api/absentiemeldingen', (_, res) => osirisGet('/student/absentiemeldingen/?limit=25', res));
-app.get('/api/afwezigheid/per_dag', (_, res) => osirisGet('/student/afwezigheid/per_dag/?limit=7', res));
+app.get('/api/afwezigheid/per_dag', (req, res) => {
+  const limit = req.query.limit || 7;
+  const offset = req.query.offset || 0;
+  let path = `/student/afwezigheid/per_dag/?limit=${limit}&offset=${offset}`;
+  if (req.query.typen_waarneming) {
+    path += `&typen_waarneming=${encodeURIComponent(req.query.typen_waarneming)}`;
+  }
+  osirisGet(path, res);
+});
 app.get('/api/afwezigheid/overzicht', (_, res) => osirisGet('/student/afwezigheid/overzicht/', res));
 
 app.listen(3000, () => console.log('✅ Draait op http://localhost:3000'));
